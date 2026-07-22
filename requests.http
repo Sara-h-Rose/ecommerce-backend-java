@@ -1,0 +1,11 @@
+POST http://localhost:8080/products
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Laptop",
+  "description": "Gaming laptop",
+  "price": 999.99,
+  "quantity": 10,
+  "category": "ELECTRONICS"
+}
