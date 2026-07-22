@@ -17,6 +17,10 @@ public class ProductService {
         products.add(product);
         return product;
     }
+    public void deleteProduct(Long id) {
+        Product product = getProductById(id);
+        products.remove(product);
+    }
 
     public Product getProductById(Long id) {
         for (Product product : products) {
@@ -26,6 +30,17 @@ public class ProductService {
         }
 
         throw new ProductNotFoundException(id);
+    }
+    public Product updateProduct(Long id, Product updatedProduct) {
+        Product existingProduct = getProductById(id);
+
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        existingProduct.setQuantity(updatedProduct.getQuantity());
+        existingProduct.setCategory(updatedProduct.getCategory());
+
+        return existingProduct;
     }
 }
 
