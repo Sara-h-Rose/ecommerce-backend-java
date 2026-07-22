@@ -1,36 +1,43 @@
 package com.sarahrose.ecommerce.product.service;
+import com.sarahrose.ecommerce.product.dto.CreateProductRequest;
 import com.sarahrose.ecommerce.product.model.Product;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
+import com.sarahrose.ecommerce.product.repository.ProductRepository;
 import java.util.List;
 import com.sarahrose.ecommerce.product.exception.ProductNotFoundException;
 
 @Service
 public class ProductService {
-    private final List<Product> products = new ArrayList<>();
 
     public List<Product> getAllProducts(){
-        return products;
+        return productRepository.findAll();
     }
+    private final ProductRepository productRepository;
 
-    public Product addProduct(Product product){
-        products.add(product);
-        return product;
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+    public Product addProduct(CreateProductRequest request) {
+        Product product = new Product();
+
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setQuantity(request.getQuantity());
+        product.setCategory(request.getCategory());
+
+        return productRepository.save(product);
     }
     public void deleteProduct(Long id) {
         Product product = getProductById(id);
-        products.remove(product);
+        productRepository.delete(product);
     }
 
     public Product getProductById(Long id) {
-        for (Product product : products) {
-            if (product.getId().equals(id)) {
-                return product;
-            }
-        }
-
-        throw new ProductNotFoundException(id);
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
+
     public Product updateProduct(Long id, Product updatedProduct) {
         Product existingProduct = getProductById(id);
 
@@ -40,7 +47,7 @@ public class ProductService {
         existingProduct.setQuantity(updatedProduct.getQuantity());
         existingProduct.setCategory(updatedProduct.getCategory());
 
-        return existingProduct;
+        return productRepository.save(existingProduct);
     }
 }
 
