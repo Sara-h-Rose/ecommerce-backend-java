@@ -1,10 +1,1 @@
-POST http://localhost:8080/products
-Content-Type: application/json
-
-{
-  "name": "",
-  "description": "Invalid product",
-  "price": -50,
-  "quantity": -10,
-  "category": null
-}
+GET http://localhost:8080/products/1
