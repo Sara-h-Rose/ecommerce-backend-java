@@ -8,6 +8,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 @Data
@@ -21,5 +23,6 @@ public class Product {
     private String description;
     private BigDecimal price;
     private Integer quantity;
+    @Enumerated(EnumType.STRING)
     private Category category;
 }
