@@ -1,1 +1,57 @@
-GET http://localhost:8080/products
+### Create customer
+POST http://localhost:8080/customers
+Content-Type: application/json
+
+{
+  "name": "Sarah",
+  "email": "sarah@example.com"
+}
+
+### Get all customers
+GET http://localhost:8080/customers
+
+### Get customer by ID
+GET http://localhost:8080/customers/999
+
+### Get product by ID
+GET http://localhost:8080/products/999
+
+### Create order
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerId": 1
+}
+
+### Create order with nonexistent customer
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerId": 999
+}
+
+### Get all orders
+GET http://localhost:8080/orders
+
+### Get order 1
+GET http://localhost:8080/orders/1
+
+###
+GET http://localhost:8080/orders/999
+
+### Create order with items
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+
