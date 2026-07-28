@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.sarahrose.ecommerce.order.exception.OrderNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import com.sarahrose.ecommerce.order.exception.InsufficientStockException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,6 +25,20 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<Map<String, Object>> handleInsufficientStock(
+            InsufficientStockException exception) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(response);
     }
 

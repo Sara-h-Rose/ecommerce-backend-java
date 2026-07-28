@@ -36,7 +36,8 @@ Content-Type: application/json
 GET http://localhost:8080/orders
 
 ### Get order 1
-GET http://localhost:8080/orders/1
+GET http://localhost:8080/orders/4
+
 
 ###
 GET http://localhost:8080/orders/999
@@ -50,6 +51,50 @@ Content-Type: application/json
   "items": [
     {
       "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+
+### Test insufficient stock
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 100
+    }
+  ]
+}
+
+### Create second product
+POST http://localhost:8080/products
+Content-Type: application/json
+
+{
+  "name": "Headphones",
+  "description": "Wireless headphones",
+  "price": 79.99,
+  "quantity": 20,
+  "category": "ELECTRONICS"
+}
+
+### Create multi-product order
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 2,
       "quantity": 2
     }
   ]

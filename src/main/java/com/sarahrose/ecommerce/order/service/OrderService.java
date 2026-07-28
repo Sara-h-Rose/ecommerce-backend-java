@@ -15,7 +15,10 @@ import com.sarahrose.ecommerce.product.exception.ProductNotFoundException;
 import com.sarahrose.ecommerce.product.model.Product;
 import com.sarahrose.ecommerce.product.repository.ProductRepository;
 import com.sarahrose.ecommerce.order.dto.OrderItemRequest;
-
+import com.sarahrose.ecommerce.order.dto.OrderItemResponse;
+import java.math.BigDecimal;
+import org.springframework.transaction.annotation.Transactional;
+import com.sarahrose.ecommerce.order.exception.InsufficientStockException;
 @Service
 public class OrderService {
 
@@ -32,6 +35,7 @@ public class OrderService {
         this.productRepository = productRepository;
     }
 
+    @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
 
         Customer customer = customerRepository.findById(request.getCustomerId())
@@ -47,7 +51,12 @@ public class OrderService {
             Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() ->
                             new ProductNotFoundException(itemRequest.getProductId()));
-
+            if (product.getQuantity() < itemRequest.getQuantity()) {
+                throw new InsufficientStockException(product.getName());
+            }
+            product.setQuantity(
+                    product.getQuantity() - itemRequest.getQuantity()
+            );
             OrderItem orderItem = new OrderItem();
 
             orderItem.setOrder(order);
@@ -64,11 +73,30 @@ public class OrderService {
     }
 
     private OrderResponse toOrderResponse(Order order) {
+
+        List<OrderItemResponse> items = order.getItems()
+                .stream()
+                .map(item -> new OrderItemResponse(
+                        item.getProduct().getId(),
+                        item.getProduct().getName(),
+                        item.getQuantity(),
+                        item.getPrice()
+                ))
+                .toList();
+
+        BigDecimal total = order.getItems()
+                .stream()
+                .map(item -> item.getPrice()
+                        .multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return new OrderResponse(
                 order.getId(),
                 order.getOrderDate(),
                 order.getCustomer().getId(),
-                order.getCustomer().getName()
+                order.getCustomer().getName(),
+                items,
+                total
         );
     }
     public List<OrderResponse> getAllOrders() {
