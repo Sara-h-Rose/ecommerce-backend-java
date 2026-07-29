@@ -9,6 +9,8 @@ import com.sarahrose.ecommerce.product.dto.ProductResponse;
 import com.sarahrose.ecommerce.product.dto.UpdateProductRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import com.sarahrose.ecommerce.product.model.Category;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class ProductController {
@@ -17,6 +19,20 @@ public class ProductController {
 
     public ProductController(ProductService productService) {
         this.productService = productService;
+    }
+
+    @GetMapping("/products/category")
+    public List<ProductResponse> getProductsByCategory(
+            @RequestParam Category category) {
+
+        return productService.getProductsByCategory(category);
+    }
+
+    @GetMapping("/products/search")
+    public List<ProductResponse> searchProducts(
+            @RequestParam String name) {
+
+        return productService.searchProducts(name);
     }
 
     @GetMapping("/products")

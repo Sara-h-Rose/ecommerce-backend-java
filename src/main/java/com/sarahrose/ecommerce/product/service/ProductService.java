@@ -7,9 +7,23 @@ import java.util.List;
 import com.sarahrose.ecommerce.product.exception.ProductNotFoundException;
 import com.sarahrose.ecommerce.product.dto.ProductResponse;
 import com.sarahrose.ecommerce.product.dto.UpdateProductRequest;
+import com.sarahrose.ecommerce.product.model.Category;
 
 @Service
 public class ProductService {
+    public List<ProductResponse> getProductsByCategory(Category category) {
+        return productRepository.findByCategory(category)
+                .stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
+
+    public List<ProductResponse> searchProducts(String name) {
+        return productRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()

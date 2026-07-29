@@ -112,4 +112,16 @@ public class OrderService {
 
         return toOrderResponse(order);
     }
+
+    public List<OrderResponse> getOrdersByCustomer(Long customerId) {
+
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotFoundException(customerId);
+        }
+
+        return orderRepository.findByCustomerId(customerId)
+                .stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
 }

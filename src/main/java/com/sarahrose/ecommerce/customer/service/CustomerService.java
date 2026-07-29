@@ -7,6 +7,7 @@ import com.sarahrose.ecommerce.customer.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import com.sarahrose.ecommerce.customer.exception.CustomerNotFoundException;
+import com.sarahrose.ecommerce.customer.exception.EmailAlreadyExistsException;
 
 @Service
 public class CustomerService {
@@ -18,6 +19,11 @@ public class CustomerService {
     }
 
     public CustomerResponse addCustomer(CreateCustomerRequest request) {
+        if (customerRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyExistsException(request.getEmail());
+        }
+
+
         Customer customer = new Customer();
 
         customer.setName(request.getName());

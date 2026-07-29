@@ -100,3 +100,14 @@ Content-Type: application/json
   ]
 }
 
+###
+GET http://localhost:8080/products/category?category=ELECTRONICS
+
+###
+GET http://localhost:8080/products/search?name=lap
+
+###
+GET http://localhost:8080/products/search?name=LAP
+
+###
+GET http://localhost:8080/customers/999/orders
