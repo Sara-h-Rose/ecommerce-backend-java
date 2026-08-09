@@ -1,3 +1,5 @@
+### Customers
+
 ### Create customer
 POST http://localhost:8080/customers
 Content-Type: application/json
@@ -10,36 +12,77 @@ Content-Type: application/json
 ### Get all customers
 GET http://localhost:8080/customers
 
-### Get customer by ID
+### Get customer by id
+GET http://localhost:8080/customers/1
+
+### Get nonexistent customer
 GET http://localhost:8080/customers/999
 
-### Get product by ID
+### Duplicate customer
+POST http://localhost:8080/customers
+Content-Type: application/json
+
+{
+  "name": "Duplicate Test",
+  "email": "sarah@example.com"
+}
+
+### Get customer orders
+GET http://localhost:8080/customers/1/orders
+
+### Get orders for nonexistent customer
+GET http://localhost:8080/customers/999/orders
+
+### Products
+
+### Get all products
+GET http://localhost:8080/products
+
+### Get product by id
+GET http://localhost:8080/products/1
+
+### Get nonexistent product
 GET http://localhost:8080/products/999
 
-### Create order
-POST http://localhost:8080/orders
+### Search products
+GET http://localhost:8080/products/search?name=lap
+
+### Filter by category
+GET http://localhost:8080/products/category?category=ELECTRONICS
+
+### Create product
+POST http://localhost:8080/products
 Content-Type: application/json
 
 {
-  "customerId": 1
+  "name": "Headphones",
+  "description": "Wireless headphones",
+  "price": 79.99,
+  "quantity": 20,
+  "category": "ELECTRONICS"
 }
 
-### Create order with nonexistent customer
-POST http://localhost:8080/orders
+### Invalid product
+POST http://localhost:8080/products
 Content-Type: application/json
 
 {
-  "customerId": 999
+  "name": "",
+  "description": "Invalid test",
+  "price": -10,
+  "quantity": -5,
+  "category": null
 }
+
+### Orders
 
 ### Get all orders
 GET http://localhost:8080/orders
 
-### Get order 1
-GET http://localhost:8080/orders/4
+### Get order by id
+GET http://localhost:8080/orders/1
 
-
-###
+### Get nonexistent order
 GET http://localhost:8080/orders/999
 
 ### Create order with items
@@ -54,32 +97,6 @@ Content-Type: application/json
       "quantity": 2
     }
   ]
-}
-
-### Test insufficient stock
-POST http://localhost:8080/orders
-Content-Type: application/json
-
-{
-  "customerId": 1,
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 100
-    }
-  ]
-}
-
-### Create second product
-POST http://localhost:8080/products
-Content-Type: application/json
-
-{
-  "name": "Headphones",
-  "description": "Wireless headphones",
-  "price": 79.99,
-  "quantity": 20,
-  "category": "ELECTRONICS"
 }
 
 ### Create multi-product order
@@ -100,90 +117,15 @@ Content-Type: application/json
   ]
 }
 
-###
-GET http://localhost:8080/products/category?category=ELECTRONICS
-
-###
-GET http://localhost:8080/products/search?name=lap
-
-###
-GET http://localhost:8080/products/search?name=LAP
-
-###
-GET http://localhost:8080/customers/999/orders
-
-### Get all products
-GET http://localhost:8080/products
-
-### Get existing product
-GET http://localhost:8080/products/1
-
-### Get nonexistent product
-GET http://localhost:8080/products/999
-
-### Search product
-GET http://localhost:8080/products/search?name=lap
-
-### Filter by category
-GET http://localhost:8080/products/category?category=ELECTRONICS
-
-### Invalid product
-POST http://localhost:8080/products
-Content-Type: application/json
-
-{
-  "name": "",
-  "description": "Invalid test",
-  "price": -10,
-  "quantity": -5,
-  "category": null
-}
-
-### Get all customers
-GET http://localhost:8080/customers
-
-### Get existing customer
-GET http://localhost:8080/customers/1
-
-### Get nonexistent customer
-GET http://localhost:8080/customers/999
-
-### Get customer's orders
-GET http://localhost:8080/customers/1/orders
-
-### Get orders for nonexistent customer
-GET http://localhost:8080/customers/999/orders
-
-###
-GET http://localhost:8080/customers
-
-### Duplicate customer
-POST http://localhost:8080/customers
-Content-Type: application/json
-
-{
-  "name": "Duplicate Test",
-  "email": "sarah@example.com"
-}
-
-### Get all orders
-GET http://localhost:8080/orders
-
-### Get existing order
-GET http://localhost:8080/orders/4
-
-### Get nonexistent order
-GET http://localhost:8080/orders/999
-
-### Valid order
+### Create order with nonexistent customer
 POST http://localhost:8080/orders
 Content-Type: application/json
 
 {
-  "customerId": 1,
+  "customerId": 999,
   "items": [
     {
-      "productId": 2,
+      "productId": 1,
       "quantity": 1
     }
   ]
