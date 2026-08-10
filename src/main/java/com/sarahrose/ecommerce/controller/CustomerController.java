@@ -22,11 +22,6 @@ public class CustomerController {
         this.orderService = orderService;
     }
 
-    @PostMapping
-    public CustomerResponse createCustomer(@RequestBody @Valid CustomerRequest request) {
-        return customerService.createCustomer(request);
-    }
-
     @GetMapping
     public List<CustomerResponse> getAllCustomers() {
         return customerService.getAllCustomers();
@@ -40,5 +35,18 @@ public class CustomerController {
     @GetMapping("/{id}/orders")
     public List<OrderResponse> getCustomerOrders(@PathVariable Long id) {
         return orderService.getOrdersByCustomer(id);
+    }
+
+    @PutMapping("/{id}")
+    public CustomerResponse updateCustomer(
+            @PathVariable Long id,
+            @RequestBody @Valid CustomerRequest request) {
+
+        return customerService.updateCustomer(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteCustomer(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
     }
 }

@@ -1,96 +1,190 @@
-### Customers
+@baseUrl = http://localhost:8080
 
-### Create customer
-POST http://localhost:8080/customers
+
+### =========================================================
+### AUTHENTICATION
+### =========================================================
+
+### Register a new customer
+POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "name": "Sarah",
-  "email": "sarah@example.com"
+  "name": "Demo User",
+  "email": "demo@example.com",
+  "password": "Password123"
 }
 
-### Get all customers
-GET http://localhost:8080/customers
 
-### Get customer by id
-GET http://localhost:8080/customers/1
-
-### Get nonexistent customer
-GET http://localhost:8080/customers/999
-
-### Duplicate customer
-POST http://localhost:8080/customers
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "name": "Duplicate Test",
-  "email": "sarah@example.com"
+  "email": "john@example.com",
+  "password": "Password123"
 }
 
-### Get customer orders
-GET http://localhost:8080/customers/1/orders
+> {%
+    client.global.set("auth_token", response.body.token);
+%}
 
-### Get orders for nonexistent customer
-GET http://localhost:8080/customers/999/orders
 
-### Products
+### Invalid login - expected 401
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "WrongPassword"
+}
+
+
+### =========================================================
+### PRODUCTS
+### =========================================================
 
 ### Get all products
-GET http://localhost:8080/products
+GET {{baseUrl}}/products
+Authorization: Bearer {{auth_token}}
 
-### Get product by id
-GET http://localhost:8080/products/1
 
-### Get nonexistent product
-GET http://localhost:8080/products/999
+### Get product by ID
+GET {{baseUrl}}/products/1
+Authorization: Bearer {{auth_token}}
+
 
 ### Search products
-GET http://localhost:8080/products/search?name=lap
+GET {{baseUrl}}/products/search?name=lap
+Authorization: Bearer {{auth_token}}
 
-### Filter by category
-GET http://localhost:8080/products/category?category=ELECTRONICS
+
+### Filter products by category
+GET {{baseUrl}}/products/category?category=ELECTRONICS
+Authorization: Bearer {{auth_token}}
+
 
 ### Create product
-POST http://localhost:8080/products
+POST {{baseUrl}}/products
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
-  "name": "Headphones",
+  "name": "Demo Headphones",
   "description": "Wireless headphones",
   "price": 79.99,
   "quantity": 20,
   "category": "ELECTRONICS"
 }
 
-### Invalid product
-POST http://localhost:8080/products
+
+### Update product
+PUT {{baseUrl}}/products/1
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Laptop Pro",
+  "description": "Updated laptop",
+  "price": 1199.99,
+  "quantity": 10,
+  "category": "ELECTRONICS"
+}
+
+
+### Invalid product - expected 400
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
   "name": "",
-  "description": "Invalid test",
+  "description": "Invalid product",
   "price": -10,
   "quantity": -5,
   "category": null
 }
 
-### Orders
 
-### Get all orders
-GET http://localhost:8080/orders
+### Get nonexistent product - expected 404
+GET {{baseUrl}}/products/999
+Authorization: Bearer {{auth_token}}
 
-### Get order by id
-GET http://localhost:8080/orders/1
 
-### Get nonexistent order
-GET http://localhost:8080/orders/999
+### =========================================================
+### CUSTOMERS
+### =========================================================
 
-### Create order with items
-POST http://localhost:8080/orders
+### Get all active customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{auth_token}}
+
+
+### Get own customer profile
+GET {{baseUrl}}/customers/4
+Authorization: Bearer {{auth_token}}
+
+
+### Update own customer profile
+PUT {{baseUrl}}/customers/4
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
-  "customerId": 1,
+  "name": "John Updated",
+  "email": "john@example.com"
+}
+
+
+### Try to access another customer's profile - expected 403
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{auth_token}}
+
+
+### Try to update another customer's profile - expected 403
+PUT {{baseUrl}}/customers/1
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Unauthorized Update",
+  "email": "unauthorized@example.com"
+}
+
+
+### Get nonexistent customer - expected 404
+GET {{baseUrl}}/customers/999
+Authorization: Bearer {{auth_token}}
+
+
+### =========================================================
+### ORDERS
+### =========================================================
+
+### Get own orders
+GET {{baseUrl}}/orders
+Authorization: Bearer {{auth_token}}
+
+
+### Get own order by ID
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{auth_token}}
+
+
+### Get own order history through customer
+GET {{baseUrl}}/customers/4/orders
+Authorization: Bearer {{auth_token}}
+
+
+### Create order
+# Customer is determined from the JWT.
+# customerId is intentionally NOT sent.
+POST {{baseUrl}}/orders
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
   "items": [
     {
       "productId": 1,
@@ -99,12 +193,13 @@ Content-Type: application/json
   ]
 }
 
+
 ### Create multi-product order
-POST http://localhost:8080/orders
+POST {{baseUrl}}/orders
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
-  "customerId": 1,
   "items": [
     {
       "productId": 1,
@@ -117,30 +212,47 @@ Content-Type: application/json
   ]
 }
 
-### Create order with nonexistent customer
-POST http://localhost:8080/orders
+
+### Insufficient stock - expected 400
+POST {{baseUrl}}/orders
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
-  "customerId": 999,
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 1
-    }
-  ]
-}
-
-### Insufficient stock
-POST http://localhost:8080/orders
-Content-Type: application/json
-
-{
-  "customerId": 1,
   "items": [
     {
       "productId": 1,
       "quantity": 1000
     }
   ]
+}
+
+
+### Get another customer's order - expected 403
+GET {{baseUrl}}/orders/2
+Authorization: Bearer {{auth_token}}
+
+
+### Get nonexistent order - expected 404
+GET {{baseUrl}}/orders/999
+Authorization: Bearer {{auth_token}}
+
+
+### =========================================================
+### CUSTOMER SOFT DELETE
+### =========================================================
+### Run these LAST because they deactivate the account.
+
+### Soft delete own customer account
+DELETE {{baseUrl}}/customers/4
+Authorization: Bearer {{auth_token}}
+
+
+### Login after soft delete - expected 401
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "Password123"
 }

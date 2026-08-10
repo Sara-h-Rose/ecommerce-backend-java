@@ -9,6 +9,9 @@ import com.sarahrose.ecommerce.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import com.sarahrose.ecommerce.security.SecurityUtil;
+import com.sarahrose.ecommerce.exception.AccessDeniedException;
+import com.sarahrose.ecommerce.security.SecurityUtil;
 
 @Service
 public class CustomerService {
@@ -19,34 +22,89 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    public CustomerResponse createCustomer(CustomerRequest request) {
-        if (customerRepository.existsByEmail(request.getEmail())) {
+    public List<CustomerResponse> getAllCustomers() {
+        return customerRepository.findByActiveTrue().stream()
+                .map(this::toCustomerResponse)
+                .toList();
+    }
+
+    public CustomerResponse getCustomerById(Long id) {
+
+        Customer customer = getCustomer(id);
+
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        if (!customer.getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException();
+        }
+
+        return toCustomerResponse(customer);
+    }
+
+    public Customer getCustomer(Long id) {
+        return customerRepository.findById(id)
+                .filter(Customer::isActive)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
+    }
+
+    public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
+
+        Customer customer = getCustomer(id);
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        if (!customer.getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException();
+        }
+
+        if (!customer.getEmail().equals(request.getEmail())
+                && customerRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
-        Customer customer = new Customer();
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
 
         return toCustomerResponse(customerRepository.save(customer));
     }
 
-    public List<CustomerResponse> getAllCustomers() {
-        return customerRepository.findAll().stream()
-                .map(this::toCustomerResponse)
-                .toList();
-    }
+    public void deleteCustomer(Long id) {
 
-    public CustomerResponse getCustomerById(Long id) {
-        return toCustomerResponse(getCustomer(id));
-    }
+        Customer customer = getCustomer(id);
 
-    public Customer getCustomer(Long id) {
-        return customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        if (!customer.getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException();
+        }
+
+        customer.setActive(false);
+
+        customerRepository.save(customer);
     }
 
     private CustomerResponse toCustomerResponse(Customer customer) {
-        return new CustomerResponse(customer.getId(), customer.getName(), customer.getEmail());
+        return new CustomerResponse(
+                customer.getId(),
+                customer.getName(),
+                customer.getEmail(),
+                customer.isActive()
+        );
+    }
+
+    public Customer getCustomerByEmail(String email) {
+        return customerRepository.findByEmail(email)
+                .filter(Customer::isActive)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer", 0L));
+    }
+
+    private Customer getAuthenticatedCustomer() {
+
+        String email = SecurityUtil.getCurrentUserEmail();
+
+        return customerRepository.findByEmail(email)
+                .filter(Customer::isActive)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer", 0L));
     }
 }
