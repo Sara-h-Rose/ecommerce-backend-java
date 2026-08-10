@@ -1,13 +1,15 @@
 # E-Commerce Backend API
 
-A RESTful backend application for an e-commerce system built with OpenJDK 25, Spring Boot, Spring Data JPA, and MySQL.
+A RESTful backend for an e-commerce system built with OpenJDK 25, Spring Boot, Spring Data JPA, Spring Security, JWT, and MySQL.
 
-The application provides APIs for managing products, customers, and orders. It includes product search and filtering, order processing with stock management, input validation, CORS support for a frontend on `http://localhost:4200`, and centralized exception handling.
+The API supports customer registration and login, product catalog management, order placement with stock handling, and profile management. A companion Angular frontend runs at `http://localhost:4200`.
 
 ## Technologies
 
 - OpenJDK 25
 - Spring Boot
+- Spring Security
+- JWT
 - Spring Data JPA
 - Hibernate
 - MySQL
@@ -17,19 +19,61 @@ The application provides APIs for managing products, customers, and orders. It i
 
 ## Features
 
-- Create, update, delete, and retrieve products
-- Search products by name
-- Filter products by category
-- Create and retrieve customers
-- Prevent duplicate customer emails
-- Create orders containing multiple products
-- Automatically update product stock when an order is placed
+- Register and login with JWT authentication
+- Browse, search, and filter products
+- Create, update, and delete products (authenticated)
+- Update or soft-delete your own customer profile
+- Create orders linked to the authenticated customer
+- Automatically reduce product stock when an order is placed
 - Prevent orders when stock is insufficient
-- Calculate order totals
-- Retrieve order history for a customer
-- Request validation
+- Calculate order totals on the backend
+- Retrieve your own orders and order history
+- Request validation and centralized exception handling
 - CORS enabled for `http://localhost:4200`
-- Centralized exception handling
+
+## Authentication
+
+Public endpoints:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Create a customer account |
+| POST | `/auth/login` | Login and receive a JWT |
+
+All other endpoints require:
+
+```http
+Authorization: Bearer <JWT>
+```
+
+Registration is the only way to create a customer account. There is no `POST /customers`.
+
+### Register
+
+```json
+{
+  "name": "John",
+  "email": "john@example.com",
+  "password": "Password123"
+}
+```
+
+### Login
+
+```json
+{
+  "email": "john@example.com",
+  "password": "Password123"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "JWT_TOKEN"
+}
+```
 
 ## API Endpoints
 
@@ -37,13 +81,13 @@ The application provides APIs for managing products, customers, and orders. It i
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/products` | Create a new product |
 | GET | `/products` | Get all products |
 | GET | `/products/{id}` | Get a product by ID |
-| PUT | `/products/{id}` | Update a product |
-| DELETE | `/products/{id}` | Delete a product |
 | GET | `/products/search?name={name}` | Search products by name |
 | GET | `/products/category?category={category}` | Filter products by category |
+| POST | `/products` | Create a product |
+| PUT | `/products/{id}` | Update a product |
+| DELETE | `/products/{id}` | Delete a product |
 
 Supported categories: `ELECTRONICS`, `BOOKS`, `CLOTHING`, `HOME`, `SPORTS`, `BEAUTY`.
 
@@ -51,33 +95,65 @@ Supported categories: `ELECTRONICS`, `BOOKS`, `CLOTHING`, `HOME`, `SPORTS`, `BEA
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/customers` | Create a new customer |
-| GET | `/customers` | Get all customers |
-| GET | `/customers/{id}` | Get a customer by ID |
-| GET | `/customers/{id}/orders` | Get all orders for a customer |
+| GET | `/customers` | Get all active customers |
+| GET | `/customers/{id}` | Get your own profile |
+| PUT | `/customers/{id}` | Update your own profile |
+| DELETE | `/customers/{id}` | Soft-delete your own account |
+| GET | `/customers/{id}/orders` | Get your own order history |
+
+Customer update request:
+
+```json
+{
+  "name": "John Updated",
+  "email": "john@example.com"
+}
+```
 
 ### Orders
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/orders` | Create a new order |
-| GET | `/orders` | Get all orders |
-| GET | `/orders/{id}` | Get an order by ID |
+| POST | `/orders` | Create an order for the authenticated customer |
+| GET | `/orders` | Get your own orders |
+| GET | `/orders/{id}` | Get one of your own orders |
+
+Create order request:
+
+```json
+{
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+```
+
+Do not send `customerId`. The backend determines the customer from the JWT.
 
 ## Project Structure
 
 ```text
 src/main/java/com/sarahrose/ecommerce/
 ├── config/
-│   └── CorsConfig.java
+│   ├── CorsConfig.java
+│   └── SecurityConfig.java
 ├── controller/
+│   ├── AuthController.java
 │   ├── CustomerController.java
 │   ├── OrderController.java
 │   └── ProductController.java
 ├── service/
+│   ├── AuthService.java
 │   ├── CustomerService.java
+│   ├── JwtService.java
 │   ├── OrderService.java
 │   └── ProductService.java
+├── security/
+│   ├── JwtAuthenticationFilter.java
+│   └── SecurityUtil.java
 ├── repository/
 │   ├── CustomerRepository.java
 │   ├── OrderRepository.java
@@ -90,110 +166,100 @@ src/main/java/com/sarahrose/ecommerce/
 ├── dto/
 │   ├── CustomerRequest.java
 │   ├── CustomerResponse.java
+│   ├── LoginRequest.java
+│   ├── LoginResponse.java
 │   ├── OrderItemRequest.java
 │   ├── OrderItemResponse.java
 │   ├── OrderRequest.java
 │   ├── OrderResponse.java
 │   ├── ProductRequest.java
-│   └── ProductResponse.java
+│   ├── ProductResponse.java
+│   └── RegisterRequest.java
 ├── exception/
+│   ├── AccessDeniedException.java
 │   ├── ApiError.java
 │   ├── EmailAlreadyExistsException.java
 │   ├── GlobalExceptionHandler.java
 │   ├── InsufficientStockException.java
+│   ├── InvalidCredentialsException.java
 │   └── ResourceNotFoundException.java
 └── enums/
     └── Category.java
 ```
 
-## Database Configuration
+## Configuration
 
-The application uses MySQL.
+Create a MySQL database named `ecommerce`.
 
-Create a MySQL database named:
-
-```text
-ecommerce
-```
-
-Database credentials are loaded from a local `.env` file (not committed to git).
-
-Create a `.env` file in the project root and set your MySQL username and password:
+Create a `.env` file in the project root:
 
 ```env
 DB_USERNAME=your_mysql_username
 DB_PASSWORD=your_mysql_password
+JWT_SECRET=your_long_random_secret_key
 ```
 
-The datasource URL and JPA settings stay in `application.properties`:
+Settings in `application.properties`:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
-
+jwt.secret=${JWT_SECRET}
 spring.jpa.hibernate.ddl-auto=update
 ```
 
+Run the app from the project root so Spring can load `.env`.
+
 ## CORS
 
-CORS is configured in `CorsConfig` to allow the frontend at `http://localhost:4200` to call the API with `GET`, `POST`, `PUT`, `DELETE`, and `OPTIONS`.
+CORS is configured for `http://localhost:4200` and integrated with Spring Security.
 
 ## Running the Application
-
-Clone the repository and navigate to the project directory.
-
-Run the application using Maven:
 
 ```powershell
 .\mvnw spring-boot:run
 ```
 
-The API will be available at:
+API base URL:
 
 ```text
 http://localhost:8080
 ```
 
-## Example: Create an Order
+## Frontend
 
-```http
-POST /orders
-Content-Type: application/json
+The Angular frontend in `../frontend` provides:
+
+- Register and login
+- Dashboard
+- Product browsing
+- Order placement and order history
+- Profile update and account soft-delete
+
+Start the frontend from the `frontend` directory:
+
+```powershell
+npm install
+npm start
 ```
-
-```json
-{
-  "customerId": 1,
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 2
-    },
-    {
-      "productId": 2,
-      "quantity": 1
-    }
-  ]
-}
-```
-
-When an order is created, the application verifies product availability, stores the order and its items, updates the product stock, and calculates the total using the product prices.
 
 ## Error Handling
 
-The API provides appropriate HTTP responses for common errors, including:
-
-- `400 Bad Request` — validation errors or insufficient stock
-- `404 Not Found` — product, customer, or order does not exist
-- `409 Conflict` — customer email already exists
+| Status | Meaning |
+|---|---|
+| 400 | Validation error or insufficient stock |
+| 401 | Invalid credentials or missing/invalid authentication |
+| 403 | Authenticated but not allowed to access the resource |
+| 404 | Resource not found |
+| 409 | Conflict, such as duplicate email |
 
 ## Testing
 
-Run the Maven test suite with:
+Run the Maven test suite:
 
 ```powershell
 .\mvnw clean test
 ```
 
-Example API requests for testing the endpoints are also available in `requests.http`.
+Example API requests are in `requests.http`. Run **Auth — login** first; IntelliJ stores the JWT automatically for the protected requests below it.

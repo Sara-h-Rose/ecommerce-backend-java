@@ -27,6 +27,13 @@ public class GlobalExceptionHandler {
         return errorResponse(HttpStatus.CONFLICT, exception.getMessage());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(
+            InvalidCredentialsException exception) {
+
+        return errorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(
             MethodArgumentNotValidException exception) {
@@ -44,5 +51,12 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiError> errorResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(new ApiError(status.value(), message));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(
+            AccessDeniedException exception) {
+
+        return errorResponse(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 }

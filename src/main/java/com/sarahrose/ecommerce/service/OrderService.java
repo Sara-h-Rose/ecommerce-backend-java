@@ -4,12 +4,15 @@ import com.sarahrose.ecommerce.dto.OrderItemRequest;
 import com.sarahrose.ecommerce.dto.OrderItemResponse;
 import com.sarahrose.ecommerce.dto.OrderRequest;
 import com.sarahrose.ecommerce.dto.OrderResponse;
+import com.sarahrose.ecommerce.exception.AccessDeniedException;
 import com.sarahrose.ecommerce.exception.InsufficientStockException;
 import com.sarahrose.ecommerce.exception.ResourceNotFoundException;
+import com.sarahrose.ecommerce.model.Customer;
 import com.sarahrose.ecommerce.model.Order;
 import com.sarahrose.ecommerce.model.OrderItem;
 import com.sarahrose.ecommerce.model.Product;
 import com.sarahrose.ecommerce.repository.OrderRepository;
+import com.sarahrose.ecommerce.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +40,12 @@ public class OrderService {
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
         Order order = new Order();
-        order.setCustomer(customerService.getCustomer(request.getCustomerId()));
+
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        Customer customer = customerService.getCustomerByEmail(currentUserEmail);
+
+        order.setCustomer(customer);
         order.setOrderDate(LocalDateTime.now());
 
         for (OrderItemRequest itemRequest : request.getItems()) {
@@ -61,17 +69,39 @@ public class OrderService {
     }
 
     public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream()
+
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        Customer customer = customerService.getCustomerByEmail(currentUserEmail);
+
+        return orderRepository.findByCustomerId(customer.getId()).stream()
                 .map(this::toOrderResponse)
                 .toList();
     }
 
     public OrderResponse getOrderById(Long id) {
-        return toOrderResponse(getOrder(id));
+
+        Order order = getOrder(id);
+
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        if (!order.getCustomer().getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException();
+        }
+
+        return toOrderResponse(order);
     }
 
     public List<OrderResponse> getOrdersByCustomer(Long customerId) {
-        customerService.getCustomer(customerId);
+
+        Customer customer = customerService.getCustomer(customerId);
+
+        String currentUserEmail = SecurityUtil.getCurrentUserEmail();
+
+        if (!customer.getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException();
+        }
+
         return orderRepository.findByCustomerId(customerId).stream()
                 .map(this::toOrderResponse)
                 .toList();
