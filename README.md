@@ -4,12 +4,41 @@ A RESTful backend for an e-commerce system built with OpenJDK 25, Spring Boot, S
 
 The API supports customer registration and login, product catalog management, order placement with stock handling, and profile management. A companion Angular frontend runs at `http://localhost:4200`.
 
+## Quick Start
+
+1. Create a MySQL database named `ecommerce`.
+2. Create a `.env` file in the project root:
+
+```env
+DB_USERNAME=your_mysql_username
+DB_PASSWORD=your_mysql_password
+JWT_SECRET=your_long_random_secret_key
+```
+
+3. Start the backend from the project root:
+
+```powershell
+.\mvnw spring-boot:run
+```
+
+4. (Optional) Start the Angular frontend from `../frontend`:
+
+```powershell
+npm install
+npm start
+```
+
+5. Test the API with `requests.http`. Run **Auth — login** first; IntelliJ stores the JWT for the protected requests below it.
+
+API base URL: `http://localhost:8080`
+
 ## Technologies
 
 - OpenJDK 25
 - Spring Boot
 - Spring Security
 - JWT
+- BCrypt password hashing
 - Spring Data JPA
 - Hibernate
 - MySQL
@@ -20,33 +49,50 @@ The API supports customer registration and login, product catalog management, or
 ## Features
 
 - Register and login with JWT authentication
+- Passwords hashed with BCrypt before storage
 - Browse, search, and filter products
-- Create, update, and delete products (authenticated)
+- Create, update, and soft-delete products (authenticated)
 - Update or soft-delete your own customer profile
 - Create orders linked to the authenticated customer
+- Store order item prices at purchase time
 - Automatically reduce product stock when an order is placed
 - Prevent orders when stock is insufficient
 - Calculate order totals on the backend
 - Retrieve your own orders and order history
 - Request validation and centralized exception handling
 - CORS enabled for `http://localhost:4200`
+- 27 automated tests covering services and application startup
 
-## Authentication
+## Authentication and Authorization
 
-Public endpoints:
+### Public endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/auth/register` | Create a customer account |
 | POST | `/auth/login` | Login and receive a JWT |
 
-All other endpoints require:
+### Protected endpoints
+
+All non-auth endpoints require a valid JWT:
 
 ```http
 Authorization: Bearer <JWT>
 ```
 
 Registration is the only way to create a customer account. There is no `POST /customers`.
+
+**What authenticated users can do today:**
+
+| Area | Access |
+|---|---|
+| Products | Any authenticated user can browse, search, create, update, and soft-delete products |
+| Customers | Users can read the active customer list, but may only view, update, or soft-delete their own profile |
+| Orders | Users can create orders and view only their own orders |
+
+Role-based admin authorization is **not** implemented. Product CRUD is available to every logged-in user, not just admins.
+
+Passwords are hashed with BCrypt on registration and verified on login.
 
 ### Register
 
@@ -79,15 +125,15 @@ Response:
 
 ### Products
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/products` | Get all products |
-| GET | `/products/{id}` | Get a product by ID |
-| GET | `/products/search?name={name}` | Search products by name |
-| GET | `/products/category?category={category}` | Filter products by category |
-| POST | `/products` | Create a product |
-| PUT | `/products/{id}` | Update a product |
-| DELETE | `/products/{id}` | Delete a product |
+| Method | Endpoint | Description | Success status |
+|---|---|---|---|
+| GET | `/products` | Get all active products | 200 |
+| GET | `/products/{id}` | Get a product by ID | 200 |
+| GET | `/products/search?name={name}` | Search products by name | 200 |
+| GET | `/products/category?category={category}` | Filter products by category | 200 |
+| POST | `/products` | Create a product | 200 |
+| PUT | `/products/{id}` | Update a product | 200 |
+| DELETE | `/products/{id}` | Soft-delete a product | 204 |
 
 Supported categories: `ELECTRONICS`, `BOOKS`, `CLOTHING`, `HOME`, `SPORTS`, `BEAUTY`.
 
@@ -132,6 +178,8 @@ Create order request:
 ```
 
 Do not send `customerId`. The backend determines the customer from the JWT.
+
+Each order item stores the product price at the time of purchase, so later product price changes do not affect existing orders.
 
 ## Project Structure
 
@@ -189,16 +237,6 @@ src/main/java/com/sarahrose/ecommerce/
 
 ## Configuration
 
-Create a MySQL database named `ecommerce`.
-
-Create a `.env` file in the project root:
-
-```env
-DB_USERNAME=your_mysql_username
-DB_PASSWORD=your_mysql_password
-JWT_SECRET=your_long_random_secret_key
-```
-
 Settings in `application.properties`:
 
 ```properties
@@ -215,18 +253,6 @@ Run the app from the project root so Spring can load `.env`.
 
 CORS is configured for `http://localhost:4200` and integrated with Spring Security.
 
-## Running the Application
-
-```powershell
-.\mvnw spring-boot:run
-```
-
-API base URL:
-
-```text
-http://localhost:8080
-```
-
 ## Frontend
 
 The Angular frontend in `../frontend` provides:
@@ -237,12 +263,7 @@ The Angular frontend in `../frontend` provides:
 - Order placement and order history
 - Profile update and account soft-delete
 
-Start the frontend from the `frontend` directory:
-
-```powershell
-npm install
-npm start
-```
+Product create/update/delete is not exposed in the UI; use `requests.http` or another API client with a JWT.
 
 ## Error Handling
 
@@ -256,10 +277,12 @@ npm start
 
 ## Testing
 
-Run the Maven test suite:
+The project includes **27 automated tests** covering auth, customer, product, and order services, plus application context startup.
+
+Run the test suite:
 
 ```powershell
 .\mvnw clean test
 ```
 
-Example API requests are in `requests.http`. Run **Auth — login** first; IntelliJ stores the JWT automatically for the protected requests below it.
+Example API requests are in `requests.http`.
