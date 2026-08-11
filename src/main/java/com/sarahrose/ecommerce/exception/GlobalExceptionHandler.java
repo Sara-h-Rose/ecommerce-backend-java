@@ -59,4 +59,11 @@ public class GlobalExceptionHandler {
 
         return errorResponse(HttpStatus.FORBIDDEN, exception.getMessage());
     }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpectedException(Exception exception) {
+        return errorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred"
+        );
+    }
 }

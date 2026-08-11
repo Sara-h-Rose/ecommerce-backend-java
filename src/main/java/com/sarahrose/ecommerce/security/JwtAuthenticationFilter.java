@@ -2,6 +2,7 @@ package com.sarahrose.ecommerce.security;
 
 import com.sarahrose.ecommerce.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -54,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext()
                     .setAuthentication(authentication);
 
-        } catch (Exception e) {
+        } catch (JwtException e) {
             // Invalid or expired token.
             // Request continues without authentication.
         }

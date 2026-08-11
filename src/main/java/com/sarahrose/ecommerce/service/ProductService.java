@@ -20,19 +20,19 @@ public class ProductService {
     }
 
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll().stream()
+        return productRepository.findByActiveTrue().stream()
                 .map(this::toProductResponse)
                 .toList();
     }
 
     public List<ProductResponse> getProductsByCategory(Category category) {
-        return productRepository.findByCategory(category).stream()
+        return productRepository.findByActiveTrueAndCategory(category).stream()
                 .map(this::toProductResponse)
                 .toList();
     }
 
     public List<ProductResponse> searchProducts(String name) {
-        return productRepository.findByNameContainingIgnoreCase(name).stream()
+        return productRepository.findByActiveTrueAndNameContainingIgnoreCase(name).stream()
                 .map(this::toProductResponse)
                 .toList();
     }
@@ -50,11 +50,17 @@ public class ProductService {
     }
 
     public void deleteProduct(Long id) {
-        productRepository.delete(getProduct(id));
+
+        Product product = getProduct(id);
+
+        product.setActive(false);
+
+        productRepository.save(product);
     }
 
     public Product getProduct(Long id) {
         return productRepository.findById(id)
+                .filter(Product::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 

@@ -136,22 +136,27 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_shouldDeleteExistingProduct() {
+    void deleteProduct_shouldSoftDeleteProduct() {
 
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
 
         productService.deleteProduct(1L);
 
+        assertFalse(product.isActive());
+
         verify(productRepository).findById(1L);
-        verify(productRepository).delete(product);
+        verify(productRepository).save(product);
+
+        verify(productRepository, never())
+                .delete(any(Product.class));
     }
 
     @Test
     void getProductsByCategory_shouldReturnMatchingProducts() {
 
-        when(productRepository.findByCategory(Category.ELECTRONICS))
-                .thenReturn(java.util.List.of(product));
+        when(productRepository.findByActiveTrueAndCategory(Category.ELECTRONICS))
+                .thenReturn(List.of(product));
 
         List<ProductResponse> responses =
                 productService.getProductsByCategory(Category.ELECTRONICS);
@@ -161,13 +166,13 @@ class ProductServiceTest {
         assertEquals(Category.ELECTRONICS, responses.get(0).category());
 
         verify(productRepository)
-                .findByCategory(Category.ELECTRONICS);
+                .findByActiveTrueAndCategory(Category.ELECTRONICS);
     }
 
     @Test
     void searchProducts_shouldReturnMatchingProducts() {
 
-        when(productRepository.findByNameContainingIgnoreCase("lap"))
+        when(productRepository.findByActiveTrueAndNameContainingIgnoreCase("lap"))
                 .thenReturn(List.of(product));
 
         List<ProductResponse> responses =
@@ -177,7 +182,38 @@ class ProductServiceTest {
         assertEquals("Laptop", responses.get(0).name());
 
         verify(productRepository)
-                .findByNameContainingIgnoreCase("lap");
+                .findByActiveTrueAndNameContainingIgnoreCase("lap");
+    }
+
+    @Test
+    void getAllProducts_shouldReturnOnlyActiveProducts() {
+
+        when(productRepository.findByActiveTrue())
+                .thenReturn(List.of(product));
+
+        List<ProductResponse> responses =
+                productService.getAllProducts();
+
+        assertEquals(1, responses.size());
+
+        verify(productRepository).findByActiveTrue();
+        verify(productRepository, never()).findAll();
+    }
+
+    @Test
+    void getProductById_shouldThrowExceptionWhenProductIsInactive() {
+
+        product.setActive(false);
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> productService.getProductById(1L)
+        );
+
+        verify(productRepository).findById(1L);
     }
 
 }
